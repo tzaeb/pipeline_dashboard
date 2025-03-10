@@ -55,10 +55,19 @@ def get_test_results_for_build(build_id):
     if response.status_code == 200:
         test_runs = response.json().get("value", [])
         if test_runs:
-            total_passed = sum(run.get("passedTests", 0) for run in test_runs)
-            total_failed = sum(run.get("failedTests", 0) for run in test_runs)
-            total_tests = sum(run.get("totalTests", 0) for run in test_runs)
-            start_date = min((run.get("startedDate", "") for run in test_runs if run.get("startedDate")), default="")
+            # Debugging: Log test runs with start dates
+            #st.write(f"Build {build_id} has {len(test_runs)} test runs:")
+            #for run in test_runs:
+            #    st.write(f"Run {run.get('id')}: Passed={run.get('passedTests', 0)}, Failed={run.get('failedTests', 0)}, Total={run.get('totalTests', 0)}, Started={run.get('startedDate', 'N/A')}")
+            
+            # Take the latest test run based on startedDate
+            latest_run = max(test_runs, key=lambda x: x.get("startedDate", ""), default=test_runs[0])
+            total_passed = latest_run.get("passedTests", 0)
+            total_failed = latest_run.get("failedTests", 0)
+            total_tests = latest_run.get("totalTests", 0)
+            start_date = latest_run.get("startedDate", "")
+            #st.write(f"Selected Run {latest_run.get('id')} for Build {build_id}: Total={total_tests}")
+            
             return {
                 "passed": total_passed,
                 "failed": total_failed,
@@ -91,7 +100,7 @@ def process_data(builds):
     return df
 
 # Streamlit app
-st.set_page_config(layout="wide")  # Use wide layout for compactness
+st.set_page_config(layout="wide")
 st.title("Azure Pipelines Dashboard")
 
 # Sidebar for pipeline selection (dropdown)
@@ -113,7 +122,6 @@ with st.sidebar:
     """)
 
 # Main content: 2x1 layout (table above chart)
-# Fetch and process data for the selected pipeline
 builds = get_builds_for_pipeline(selected_pipeline_id)
 if builds:
     df = process_data(builds)
@@ -122,7 +130,7 @@ if builds:
     st.subheader("Raw Test Data")
     st.dataframe(
         df,
-        height=200,  # ~5 rows visible, scroll for more
+        height=200,
         use_container_width=True,
         column_config={
             "Link": st.column_config.LinkColumn(
@@ -150,7 +158,7 @@ if builds:
         yaxis_title="Percentage (%)",
         legend_title="Rate",
         hovermode="x unified",
-        height=400,  # Adjusted height for single chart
+        height=400,
         margin=dict(l=20, r=20, t=40, b=20)
     )
     st.plotly_chart(fig, use_container_width=True)
