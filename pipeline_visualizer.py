@@ -94,7 +94,7 @@ def process_data(builds):
 st.set_page_config(layout="wide")  # Use wide layout for compactness
 st.title("Azure Pipelines Dashboard")
 
-# Sidebar for pipeline selection
+# Sidebar for pipeline selection (dropdown)
 with st.sidebar:
     st.header("Filters")
     pipeline_options = {name: id for id, name in Pipeline_id.items()}
@@ -112,62 +112,47 @@ with st.sidebar:
     3. Run with `streamlit run app.py`.
     """)
 
-# Main content with columns
-col1, col2 = st.columns([1, 2])  # Left for table, right for chart/summary
-
-# Fetch and process data
+# Main content: 2x1 layout (table above chart)
+# Fetch and process data for the selected pipeline
 builds = get_builds_for_pipeline(selected_pipeline_id)
 if builds:
     df = process_data(builds)
 
-    # Left column: Raw Test Data with scroll and clickable links
-    with col1:
-        st.subheader("Raw Test Data")
-        st.dataframe(
-            df,
-            height=200,  # ~5 rows visible, scroll for more
-            use_container_width=True,
-            column_config={
-                "Link": st.column_config.LinkColumn(
-                    "Link",
-                    width="small",
-                    display_text="View"  # Displays "View" as the clickable text
-                )
-            },
-            hide_index=True
-        )
+    # Row 1: Raw Test Data
+    st.subheader("Raw Test Data")
+    st.dataframe(
+        df,
+        height=200,  # ~5 rows visible, scroll for more
+        use_container_width=True,
+        column_config={
+            "Link": st.column_config.LinkColumn(
+                "Link",
+                width="small",
+                display_text="View"
+            )
+        },
+        hide_index=True
+    )
 
-    # Right column: Chart and Summary
-    with col2:
-        # Area chart for pass/fail rate
-        st.subheader("Pass/Fail Trends")
-        fig = px.area(
-            df,
-            x="Date",
-            y=["Pass_Rate", "Fail_Rate"],
-            title=f"Pipeline: {selected_pipeline_name}",
-            labels={"value": "%", "variable": "Rate"},
-            range_y=[0, 100],
-            color_discrete_map={"Pass_Rate": "#00CC96", "Fail_Rate": "#EF553B"}
-        )
-        fig.update_traces(mode="lines+markers")
-        fig.update_layout(
-            yaxis_title="Percentage (%)",
-            legend_title="Rate",
-            hovermode="x unified",
-            height=350,  # Compact height
-            margin=dict(l=20, r=20, t=40, b=20)  # Minimal margins
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Summary stats
-        st.subheader("Summary")
-        total_passed = df["Passed"].sum()
-        total_failed = df["Failed"].sum()
-        total_tests = df["Total"].sum()
-        overall_success_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
-        st.write(f"Passed: {total_passed}")
-        st.write(f"Failed: {total_failed}")
-        st.write(f"Success Rate: {overall_success_rate:.2f}%")
+    # Row 2: Pass/Fail Trends
+    st.subheader("Pass/Fail Trends")
+    fig = px.area(
+        df,
+        x="Date",
+        y=["Pass_Rate", "Fail_Rate"],
+        title=f"Pipeline: {selected_pipeline_name}",
+        labels={"value": "%", "variable": "Rate"},
+        range_y=[0, 100],
+        color_discrete_map={"Pass_Rate": "#00CC96", "Fail_Rate": "#EF553B"}
+    )
+    fig.update_traces(mode="lines+markers")
+    fig.update_layout(
+        yaxis_title="Percentage (%)",
+        legend_title="Rate",
+        hovermode="x unified",
+        height=400,  # Adjusted height for single chart
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.write(f"No build data for pipeline {selected_pipeline_name} (ID: {selected_pipeline_id}).")
+    st.write(f"No build data available for pipeline {selected_pipeline_name} (ID: {selected_pipeline_id}).")
