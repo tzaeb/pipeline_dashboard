@@ -6,8 +6,7 @@ import base64
 import os
 import yaml
 
-# Cache the configuration so that it is only loaded once per session (or until TTL expires)
-#@st.cache_data(ttl=3600)
+
 def load_config():
     try:
         with open("config.yml", "r") as file:
@@ -113,7 +112,7 @@ with st.sidebar:
     # Create a dropdown with an initial "None" option to not exclude any builds.
     selected_build_filter = st.selectbox("Filter builds", ["None"] + list(BUILD_FILTERS.keys()))
 
-    # Clear cache functions (assuming your cached functions are defined above)
+    # Clear cache functions
     if st.button("Clear Cache"):
         get_builds_for_pipeline.clear()
         get_aggregated_test_results.clear()
