@@ -22,13 +22,14 @@ PAT = config.get("pat", os.environ.get("AZURE_PAT", ""))
 MAX_BUILDS_PER_DEFINITION = config.get("maxBuildsPerDefinition")
 PIPELINES = config.get("pipelines")
 DEFAULT_PIPELINE = config.get("default_pipeline")
+BUILD_FILTERS = config.get("build_filters", {})
 
 # Encode the PAT for authentication
 def get_auth_header(pat):
     token = base64.b64encode(f":{pat}".encode()).decode()
     return {"Authorization": f"Basic {token}"}
 
-# Fetch builds for a specific pipeline (max 3 builds per definition)
+# Fetch builds for a specific pipeline (max builds per definition)
 def get_builds_for_pipeline(pipeline_id):
     url = f"https://dev.azure.com/{ORGANIZATION}/{PROJECT}/_apis/build/builds?definitions={pipeline_id}&maxBuildsPerDefinition={MAX_BUILDS_PER_DEFINITION}&api-version=7.1-preview.7"
     headers = get_auth_header(PAT)
@@ -70,7 +71,6 @@ def process_data(builds):
         total = test_results["total"]
         passed = test_results["passed"]
         failed = test_results["failed"]
-        # Use build's startTime as the date (aggregated API may not provide a test date)
         date = build["startTime"]
         pass_rate = round((passed / total * 100), 2) if total > 0 else 0
         fail_rate = round((failed / total * 100), 2) if total > 0 else 0
@@ -95,7 +95,7 @@ def process_data(builds):
 st.set_page_config(layout="wide")
 st.title("Azure Pipelines Dashboard")
 
-# Sidebar: Pipeline selection
+# Sidebar: Pipeline selection and build filter
 with st.sidebar:
     st.header("Filters")
     if PIPELINES and isinstance(PIPELINES, dict):
@@ -106,9 +106,18 @@ with st.sidebar:
     else:
         st.error("No pipeline configuration found in config.yml.")
         st.stop()
-    
+
+    # Create a dropdown with an initial "None" option to not exclude any builds.
+    selected_build_filter = st.selectbox("Filter builds", ["None"] + list(BUILD_FILTERS.keys()))
+
 # Main content: Fetch builds and aggregated test results
 builds = get_builds_for_pipeline(selected_pipeline_id)
+
+# Apply build name filter if one is selected
+if selected_build_filter != "None":
+    filter_str = BUILD_FILTERS[selected_build_filter]
+    builds = [build for build in builds if filter_str in build["buildNumber"]]
+
 if builds:
     df = process_data(builds)
     
