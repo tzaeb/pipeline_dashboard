@@ -6,7 +6,8 @@ import base64
 import os
 import yaml
 
-# Load configuration from YAML file
+# Cache the configuration so that it is only loaded once per session (or until TTL expires)
+#@st.cache_data(ttl=3600)
 def load_config():
     try:
         with open("config.yml", "r") as file:
@@ -29,7 +30,8 @@ def get_auth_header(pat):
     token = base64.b64encode(f":{pat}".encode()).decode()
     return {"Authorization": f"Basic {token}"}
 
-# Fetch builds for a specific pipeline (max builds per definition)
+# Cache the fetch of builds for a specific pipeline to avoid duplicate API calls
+@st.cache_data(ttl=3600)
 def get_builds_for_pipeline(pipeline_id):
     url = f"https://dev.azure.com/{ORGANIZATION}/{PROJECT}/_apis/build/builds?definitions={pipeline_id}&maxBuildsPerDefinition={MAX_BUILDS_PER_DEFINITION}&api-version=7.1-preview.7"
     headers = get_auth_header(PAT)
@@ -47,7 +49,8 @@ def get_builds_for_pipeline(pipeline_id):
         st.error(f"Error fetching builds for pipeline {pipeline_id}: {response.status_code} - {response.text}")
         return []
 
-# Fetch aggregated test results for a specific build using the aggregated API endpoint.
+# Cache the test results for each build so that repeated calls for the same build id are avoided.
+@st.cache_data(ttl=3600)
 def get_aggregated_test_results(build_id):
     url = f"https://vstmr.dev.azure.com/{ORGANIZATION}/{PROJECT}/_apis/testresults/resultsbybuild?buildId={build_id}&api-version=7.1-preview.1"
     headers = get_auth_header(PAT)
@@ -110,10 +113,21 @@ with st.sidebar:
     # Create a dropdown with an initial "None" option to not exclude any builds.
     selected_build_filter = st.selectbox("Filter builds", ["None"] + list(BUILD_FILTERS.keys()))
 
+    # Clear cache functions (assuming your cached functions are defined above)
+    if st.button("Clear Cache"):
+        get_builds_for_pipeline.clear()
+        get_aggregated_test_results.clear()
+        st.session_state.force_refresh = True
+
+    # Use a dummy widget to simulate a refresh trigger
+    if st.session_state.get("force_refresh"):
+        st.write("Data refreshed! Please reload the page to see the latest data.")
+        st.session_state.force_refresh = False
+
 # Main content: Fetch builds and aggregated test results
 builds = get_builds_for_pipeline(selected_pipeline_id)
 
-# Apply build name filter if one is selected
+# Apply build name filter if one is selected (filtering is done on the cached build data)
 if selected_build_filter != "None":
     filter_str = BUILD_FILTERS[selected_build_filter]
     builds = [build for build in builds if filter_str in build["buildNumber"]]
