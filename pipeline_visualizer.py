@@ -85,7 +85,6 @@ def process_data(builds):
             "Total": total,
             "Pass Rate (%)": pass_rate,
             "Fail Rate (%)": fail_rate,
-            "Description": build["description"],
             "Link": build["link"]
         })
     df = pd.DataFrame(data)
@@ -193,7 +192,7 @@ if builds:
         yaxis_title="Percentage (%)",
         legend_title="Rate",
         hovermode="x unified",
-        height=350,
+        height=400,
         margin=dict(l=20, r=20, t=40, b=20)
     )
     st.plotly_chart(fig, use_container_width=True)
