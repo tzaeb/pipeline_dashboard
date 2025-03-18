@@ -3,6 +3,8 @@
 
 A Streamlit application to visualize and analyze Azure Pipelines build and test results.
 
+![Pipeline Visualizer UI](pipeline_visualizer_ui.png)
+
 ## Overview
 
 This dashboard fetches build data and aggregated test results from Azure DevOps Pipelines and provides insights through interactive visualizations.
