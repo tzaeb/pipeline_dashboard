@@ -21,18 +21,29 @@ This dashboard fetches build data and aggregated test results from Azure DevOps 
 The application requires a `config.yml` file with the following structure:
 
 ```yaml
-organization: "<your_azure_devops_organization>"
-project: "<your_azure_devops_project>"
-pat: "<your_personal_access_token>"  # Alternatively, use AZURE_PAT environment variable
-pipelines:
-  "<pipeline_name_1>": "<pipeline_id_1>"
-  "<pipeline_name_2>": "<pipeline_id_2>"
-default_pipeline: "<default_pipeline_name>"
+# Global configuration values
+organization: "<azure_devops_organization>"  # Common organization for your account
+pat: "<personal_access_token>"  # Alternatively, use the AZURE_PAT environment variable
 build_filters:
   "<filter_name_1>": "<filter_keyword_1>"
   "<filter_name_2>": "<filter_keyword_2>"
-max_builds_option: [5, 10, 30, 50, 100]  
-```
+max_builds_option: [5, 10, 30, 50, 100]
+
+# Define one or more Azure projects
+projects:
+  "<Project Name 1>":
+    project: "<azure_devops_project_name_for_project1>"
+    pipelines:
+      "<pipeline_name_1>": "<pipeline_id_1>"
+      "<pipeline_name_2>": "<pipeline_id_2>"
+    default_pipeline: "<default_pipeline_name>"  # Optional: default pipeline for this project
+  "<Project Name 2>":
+    project: "<your_azure_devops_project_name_for_project2>"
+    pipelines:
+      "<pipeline_name_1>": "<pipeline_id_1>"
+      "<pipeline_name_2>": "<pipeline_id_2>"
+    default_pipeline: "<default_pipeline_name>"
+```    
 
 ## Prerequisites
 
