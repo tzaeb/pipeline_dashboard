@@ -28,7 +28,7 @@ build_filters:
   "<filter_name_1>": "<filter_keyword_1>"
   "<filter_name_2>": "<filter_keyword_2>"
 max_builds_option: [5, 10, 30, 50, 100]
-
+auto_refresh_interval: 300000 # Defines auto check for new builds (in ms)
 # Define one or more Azure projects
 projects:
   "<Project Name 1>":

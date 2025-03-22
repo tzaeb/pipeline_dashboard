@@ -64,10 +64,7 @@ with st.sidebar:
     if st.button("Clear Cache"):
         AzureAPI.get_builds_for_pipeline.clear()
         AzureAPI.get_aggregated_test_results.clear()
-        st.session_state.force_refresh = True
-    if st.session_state.get("force_refresh"):
-        st.write("Data refreshed! Please reload the page to see the latest data.")
-        st.session_state.force_refresh = False
+        st.rerun()
 
 # Initialize the AzureAPI class with only the PAT
 azure_api_instance = AzureAPI(PAT)
