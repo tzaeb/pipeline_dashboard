@@ -11,7 +11,18 @@ class AzureAPI:
     def _get_auth_header(self):
         token = base64.b64encode(f":{self.pat}".encode()).decode()
         return {"Authorization": f"Basic {token}"}
-    
+
+    def get_latest_build_no_cache(self, organization, project, pipeline_id, max_builds=None):
+        url = f"https://dev.azure.com/{organization}/{project}/_apis/build/builds?definitions={pipeline_id}"
+        if max_builds is not None:
+            url += f"&maxBuildsPerDefinition={max_builds}"
+        url += "&api-version=7.1-preview.7"
+        response = requests.get(url, headers=self.auth_header)
+        if response.status_code == 200:
+            builds = response.json().get("value", [])
+            return [build["id"] for build in builds] if builds else []
+        return []
+
     @st.cache_data(ttl=3600)
     def get_builds_for_pipeline(_self, organization, project, pipeline_id, max_builds=None):
         base_url = f"https://dev.azure.com/{organization}/{project}/_apis/build/builds?definitions={pipeline_id}"
